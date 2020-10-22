@@ -58,9 +58,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
               v-bind:href="logOutUrl"
               >Log Out</a
             >
-            <a class="navbar-item" v-if="!authorized" v-bind:href="signUpUrl"
+            <!-- <a class="navbar-item" v-if="!authorized" v-bind:href="signUpUrl"
               >Sign up</a
-            >
+            > -->
             <a class="navbar-item" v-if="!authorized" v-bind:href="logInUrl"
               >Log in</a
             >
@@ -78,7 +78,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. -->
           <h2 class="subtitle">The NEWEST URL shortener on the block.</h2>
           <p v-if="linkNotFound">
             We're sorry, that link could not be found.
-            <a v-bind:href="signUpUrl">Sign up</a> or
+            <!-- <a v-bind:href="signUpUrl">Sign up</a> or -->
             <a v-bind:href="logInUrl">Log in</a> to register it?
           </p>
         </div>
@@ -104,7 +104,7 @@ export default {
   data() {
     return {
       appName: `Magic ${process.env.VUE_APP_NAME}`,
-      signUpUrl: `${authDomain}/signup?response_type=code&client_id=${clientId}&redirect_uri=${redUrl}`,
+      // signUpUrl: `${authDomain}/signup?response_type=code&client_id=${clientId}&redirect_uri=${redUrl}`,
       logInUrl: `${authDomain}/login?response_type=code&client_id=${clientId}&redirect_uri=${redUrl}`,
       logOutUrl: `${authDomain}/logout?client_id=${clientId}&logout_uri=${redUrl}`,
       linkNotFound: lnf,
