@@ -53,7 +53,7 @@ Conditions:
 ##   Template Resources                                                                          ##
 ###################################################################################################
 Resources:
-  ##   API Gateway                                                                                 
+  ##   API Gateway
   SiteAPI:
     Type: AWS::Serverless::Api
     Properties:
@@ -98,37 +98,39 @@ Resources:
               KeyType: HASH
           Projection:
             ProjectionType: ALL
-  
+
   ##   Cognito user pool
   UserPool:
-    Type: AWS::Cognito::UserPool 
-    Properties: 
-      UserPoolName: !Sub ${AppName}-UserPool 
-      Policies: 
-        PasswordPolicy: 
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${AppName}-UserPool
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      Policies:
+        PasswordPolicy:
           MinimumLength: 8
       AutoVerifiedAttributes:
         - email
-      UsernameAttributes: 
-        - email 
-      Schema: 
-        - AttributeDataType: String 
-          Name: email 
+      UsernameAttributes:
+        - email
+      Schema:
+        - AttributeDataType: String
+          Name: email
           Required: false
 
   ##   Cognito user pool domain
   UserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
-    Properties: 
+    Properties:
       Domain: !Sub ${AppName}-${AWS::AccountId}
       UserPoolId: !Ref UserPool
 
   ##   Cognito user pool client
   UserPoolClient:
-    Type: AWS::Cognito::UserPoolClient 
-    Properties: 
-      UserPoolId: !Ref UserPool 
-      ClientName: !Sub ${AppName}-UserPoolClient 
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: !Sub ${AppName}-UserPoolClient
       GenerateSecret: false
       SupportedIdentityProviders:
         - COGNITO
@@ -150,7 +152,7 @@ Resources:
   ##   CloudFront distribution
   CloudFrontDistro:
     Type: AWS::CloudFront::Distribution
-    Properties: 
+    Properties:
       DistributionConfig:
         Comment: URL Shortener CDN
         DefaultCacheBehavior:
@@ -240,7 +242,7 @@ Resources:
             Effect: "Allow"
             Principal:
               Service: "apigateway.amazonaws.com"
-            Action: 
+            Action:
               - "sts:AssumeRole"
       Policies:
         - PolicyName: DDBReadPolicy
@@ -269,7 +271,7 @@ Resources:
             Effect: "Allow"
             Principal:
               Service: "apigateway.amazonaws.com"
-            Action: 
+            Action:
               - "sts:AssumeRole"
       Policies:
         - PolicyName: DDBCrudPolicy
@@ -309,7 +311,7 @@ Resources:
     Type: 'AWS::ApiGateway::Account'
     Properties:
       CloudWatchRoleArn: !GetAtt CloudWatchRole.Arn
-      
+
   CloudWatchRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -471,12 +473,12 @@ Outputs:
   VueAppAPIRoot:
     Description: API Gateway endpoint URL for linker
     Value: !GetAtt CloudFrontDistro.DomainName
- 
-  VueAppAuthDomain: 
+
+  VueAppAuthDomain:
     Description: Domain used for authentication
     Value: !Sub https://${AppName}-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com
 
-  VueAppClientId: 
+  VueAppClientId:
     Description: Cognito User Pool Client Id
     Value: !Ref UserPoolClient
 
@@ -487,7 +489,7 @@ Outputs:
   AmplifyAppId:
     Description: Amplify application ID
     Value: !GetAtt AmplifyApp.AppId
-  
+
   AmplifyEnvironmentUpdateCommand:
     Description: Command to add environment variables to the Amplify application
     Value: !Sub
