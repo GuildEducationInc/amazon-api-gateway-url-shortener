@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: "Lambda for handling url shortening"
+
+Globals:
+  Function:
+    Runtime: python3.6
+    Tags:
+      owner: comms
+
+Parameters:
+
+  StageName:
+    Type: String
+    Default: dev
+    AllowedPattern: ^(local|dev|staging|prod)(-\w+)?$
+    Description: "Differentiates stages within an environment. Typically this
+      will be the same as the EnvironmentName, but it may differ for reasons
+      like setting up a staging environment to test a new feature."
+
+  ServiceName:
+    Type: String
+    Default: comms-url-shortener
+
+# Mappings:
+#   Environment:
+#     local:
+#     dev:
+#     staging:
+#     prod:
+
+Resources:
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn: CommsUrlShortener
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ServiceName}-${StageName}"
+
+  CommsUrlShortener:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ServiceName}-${StageName}
+      CodeUri: ./.dist
+      Handler: main.handler
+      Tracing: Active
