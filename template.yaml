@@ -99,6 +99,14 @@ Resources:
           Projection:
             ProjectionType: ALL
 
+  LinkTableArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: Communications pipeline circuit breaker function ARN
+      Name: "/DynamoDB/Table/LinkTable/arn"
+      Value: !GetAtt LinkTable.Arn
+      Type: String
+
   ##   Cognito user pool
   UserPool:
     Type: AWS::Cognito::UserPool
