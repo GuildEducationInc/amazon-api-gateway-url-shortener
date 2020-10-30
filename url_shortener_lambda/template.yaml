@@ -9,7 +9,6 @@ Globals:
       owner: comms
 
 Parameters:
-
   StageName:
     Type: String
     Default: dev
@@ -22,20 +21,15 @@ Parameters:
     Type: String
     Default: comms-url-shortener
 
-# Mappings:
-#   Environment:
-#     local:
-#     dev:
-#     staging:
-#     prod:
+  LambdaLogStreamArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /Kinesis/Stream/LambdaLogStream/Arn
+
+  LinkTableArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /DynamoDB/Table/LinkTable/arn
 
 Resources:
-  LogGroup:
-    Type: AWS::Logs::LogGroup
-    DependsOn: CommsUrlShortener
-    Properties:
-      LogGroupName: !Sub "/aws/lambda/${ServiceName}-${StageName}"
-
   CommsUrlShortener:
     Type: AWS::Serverless::Function
     Properties:
@@ -43,3 +37,40 @@ Resources:
       CodeUri: ./.dist
       Handler: main.handler
       Tracing: Active
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+            Resource: !Ref LinkTableArn
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CommsUrlShortener
+      Action: lambda:InvokeFunction
+      Principal: lambda.amazonaws.com
+
+  CommsUrlShortenerArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: Communications pipeline circuit breaker function ARN
+      Name: "/Lambda/Function/url-grey/url-shortener/arn"
+      Value: !GetAtt CommsUrlShortener.Arn
+      Type: String
+
+  CommsUrlShortenerLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn: CommsUrlShortener
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${CommsUrlShortener}"
+
+  CommsUrlShortenerSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: CommsUrlShortenerLogGroup
+    Properties:
+      DestinationArn: !Ref LambdaLogStreamArn
+      FilterPattern: ""
+      LogGroupName: !Sub "/aws/lambda/${CommsUrlShortener}"
+      RoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/CWLtoKinesisRole"
+
