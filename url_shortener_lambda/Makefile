@@ -32,8 +32,6 @@ format:
 build:
 	@rm -fr .dist
 	@mkdir .dist
-	# @cd ../common && make build
-	# @cp -R ../common/.dist/* .dist/
 	@cp -R src/* .dist/
 	@sam build
 
