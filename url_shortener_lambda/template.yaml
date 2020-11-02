@@ -9,6 +9,17 @@ Globals:
       owner: comms
 
 Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - local
+      - dev
+      - staging
+      - prod
+    Description: "The runtime environment (e.g. dev, prod, etc). Analagous to
+      one of the AWS accounts within the organization."
+
   StageName:
     Type: String
     Default: dev
@@ -29,6 +40,17 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /DynamoDB/Table/LinkTable/arn
 
+Mappings:
+  Environment:
+    local:
+      LogLevel: "DEBUG"
+    dev:
+      LogLevel: "DEBUG"
+    staging:
+      LogLevel: "INFO"
+    prod:
+      LogLevel: "INFO"
+
 Resources:
   CommsUrlShortener:
     Type: AWS::Serverless::Function
@@ -42,7 +64,12 @@ Resources:
           - Effect: Allow
             Action:
               - dynamodb:PutItem
+              - dynamodb:Scan
             Resource: !Ref LinkTableArn
+      Environment:
+        Variables:
+          LINK_TABLE_NAME: !Sub "${ServiceName}-link-table-${StageName}"
+          LOG_LEVEL: !FindInMap [Environment, !Ref EnvironmentName, LogLevel]
 
   LambdaInvokePermission:
     Type: AWS::Lambda::Permission
