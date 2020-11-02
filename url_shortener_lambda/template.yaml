@@ -1,0 +1,103 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: "Lambda for handling url shortening"
+
+Globals:
+  Function:
+    Runtime: python3.6
+    Tags:
+      owner: comms
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - local
+      - dev
+      - staging
+      - prod
+    Description: "The runtime environment (e.g. dev, prod, etc). Analagous to
+      one of the AWS accounts within the organization."
+
+  StageName:
+    Type: String
+    Default: dev
+    AllowedPattern: ^(local|dev|staging|prod)(-\w+)?$
+    Description: "Differentiates stages within an environment. Typically this
+      will be the same as the EnvironmentName, but it may differ for reasons
+      like setting up a staging environment to test a new feature."
+
+  ServiceName:
+    Type: String
+    Default: comms-url-shortener
+
+  LambdaLogStreamArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /Kinesis/Stream/LambdaLogStream/Arn
+
+  LinkTableArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /DynamoDB/Table/LinkTable/arn
+
+Mappings:
+  Environment:
+    local:
+      LogLevel: "DEBUG"
+    dev:
+      LogLevel: "DEBUG"
+    staging:
+      LogLevel: "INFO"
+    prod:
+      LogLevel: "INFO"
+
+Resources:
+  CommsUrlShortener:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${ServiceName}-${StageName}
+      CodeUri: ./.dist
+      Handler: main.handler
+      Tracing: Active
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:Scan
+            Resource: !Ref LinkTableArn
+      Environment:
+        Variables:
+          LINK_TABLE_NAME: !Sub "${ServiceName}-link-table-${StageName}"
+          LOG_LEVEL: !FindInMap [Environment, !Ref EnvironmentName, LogLevel]
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CommsUrlShortener
+      Action: lambda:InvokeFunction
+      Principal: lambda.amazonaws.com
+
+  CommsUrlShortenerArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: Commus url shortener function ARN
+      Name: "/Lambda/Function/url-grey/url-shortener/arn"
+      Value: !GetAtt CommsUrlShortener.Arn
+      Type: String
+
+  CommsUrlShortenerLogGroup:
+    Type: AWS::Logs::LogGroup
+    DependsOn: CommsUrlShortener
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${CommsUrlShortener}"
+
+  CommsUrlShortenerSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn: CommsUrlShortenerLogGroup
+    Properties:
+      DestinationArn: !Ref LambdaLogStreamArn
+      FilterPattern: ""
+      LogGroupName: !Sub "/aws/lambda/${CommsUrlShortener}"
+      RoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/CWLtoKinesisRole"
+
