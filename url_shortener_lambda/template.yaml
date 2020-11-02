@@ -81,7 +81,7 @@ Resources:
   CommsUrlShortenerArnParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Description: Communications pipeline circuit breaker function ARN
+      Description: Commus url shortener function ARN
       Name: "/Lambda/Function/url-grey/url-shortener/arn"
       Value: !GetAtt CommsUrlShortener.Arn
       Type: String
